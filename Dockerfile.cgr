@@ -1,0 +1,25 @@
+FROM cgr.dev/chainguard-private/jdk-crac:latest as builder
+WORKDIR /home/app
+ADD --chown=java:java . /home/app/spring-petclinic-main
+RUN cd spring-petclinic-main && ./mvnw -Dmaven.test.skip=true clean package
+ 
+FROM cgr.dev/chainguard-private/jdk-crac:latest as optimizer
+
+WORKDIR /app
+COPY --from=builder /home/app/spring-petclinic-main/target/spring-petclinic-3.3.0-SNAPSHOT.jar /app/app.jar
+
+RUN java -Djarmode=tools -jar app.jar extract --layers --launcher
+
+FROM cgr.dev/chainguard-private/jdk-crac:latest 
+
+# We stay root in a container to use CRaC
+USER root
+VOLUME /tmp
+EXPOSE 8080
+
+COPY --from=optimizer /app/app/dependencies/ ./
+COPY --from=optimizer /app/app/spring-boot-loader/ ./
+COPY --from=optimizer /app/app/snapshot-dependencies/ ./
+COPY --from=optimizer /app/app/application/ ./
+
+ENTRYPOINT ["java", "-Dspring.context.checkpoint=onRefresh", "-XX:CRaCCheckpointTo=/home/build/checkpoint", "-XX:MaxRAMPercentage=80.0", "org.springframework.boot.loader.launch.JarLauncher"]
