@@ -40,7 +40,7 @@ When it's exited, we can create a new image from the exited container with `dock
 
 And, remove the exited image
 ```
-docker commit --change='ENTRYPOINT ["java", "-XX:CRaCRestoreFrom=/checkpoint"]' petclinic-crac petclinic-advanced-crac-restore
+docker commit --change='ENTRYPOINT ["java", "-XX:CRaCRestoreFrom=/home/build/checkpoint"]' petclinic-crac petclinic-advanced-crac-restore
 docker rm petclinic-crac
 ```
 Now start a new instance of the petclinic from the image with the checkpoint in:
